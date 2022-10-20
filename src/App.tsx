@@ -1,34 +1,68 @@
-import { ChangeEvent, FormEvent, useState } from 'react'
+import { FormEvent, useDebugValue, useEffect, useState } from 'react'
 
 interface UserProps {
   id: number
-  name?: string
+  name: string
+  service: string
 }
+
 
 export function App() {
 
   const [users, setUsers] = useState<UserProps[]>([])
-  const [user, setUser] = useState<UserProps>({
-    id: 0, name: ''
-  })
+  const [user, setUser] = useState<UserProps | null>()
+  const form = (document.querySelector('#form') as HTMLFormElement)
 
+  useEffect(() => {
+    setUsers([{
+      id: 1,
+      name: 'lucas ',
+      service: 'qweqwe'
+    }])
 
-  function addList(event: FormEvent<HTMLFormElement>) {
+  }, [])
+  // const formFields = []
+  const field = {
+    service: (document.querySelector('input[name=service]') as HTMLInputElement),
+    name: (document.querySelector('input[name=name]') as HTMLInputElement),
+    id: (document.querySelector('input[name=id]') as HTMLInputElement)
+  }
+
+  function clearFields() {
+    form?.reset()
+    field.name?.focus()
+  }
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const input = (document.querySelector('input') as HTMLInputElement)
-    const name = input.value
+    const formData = new FormData(event.target as HTMLFormElement)
 
-    if (!name) return
+    const data = Object.fromEntries(formData) as unknown as UserProps
+    try {
 
-    setUsers([
-      ...users,
-      {
-        id: users?.length + 1,
-        name
+      if (data.id) {
+
+        const updateUsers = users.map(user => {
+          if (user.id == data.id) {
+            return data
+          }
+          return user
+        })
+        setUsers(updateUsers)
+        return
       }
-    ])
 
-    input.value = ''
+      const newUser = {
+        id: users.length + 1,
+        name: data.name,
+        service: data.service
+      }
+
+      setUsers([...users, newUser])
+    } catch (err) {
+      console.log(err)
+    } finally {
+      clearFields()
+    }
 
   }
 
@@ -39,39 +73,27 @@ export function App() {
 
   }
 
-  // function updateUser()
-  function handlechange(event: ChangeEvent<HTMLInputElement>) {
-    const { name, value } = event.target
-
-    const userSelect = {
-      ...user,
-      [name]: value
-    }
-
-    setUser(userSelect)
-
-  }
-
-
   return (
     <div>
-      <form onSubmit={addList}>
-
-        <input
-          type="text"
-          name='newuser'
+      <form id="form" onSubmit={handleSubmit}>
+        <input type="hidden" name='id'
 
         />
-        <button >
-          Salvar
+        <input type="text" name='name' />
+        <input type="text" name='service' />
+        <button>
+          SALVAR
         </button>
       </form>
       {users?.map(user => (
         <p
           key={user.id}
           onClick={() => {
-            console.log(user.name)
-            setUser(user)
+
+
+            field.name.value = user.name
+            field.service.value = user.service
+            field.id.value = String(user.id)
 
             // id.value = String(user.id)
             // name.value = user.name 
@@ -80,38 +102,13 @@ export function App() {
           }}
 
         >
-          {user.id} - {user.name} - &nbsp;
-          <button onClick={() => deleteUser(user.id)}>
+          {user.id} - {user.name} - {user.service} &nbsp;
+          <button onClick={() => deleteUser(user.id || 0)}>
             Delete
           </button>
         </p>
 
       ))}
-
-      <form onSubmit={(event) => {
-        event.preventDefault()
-        const newUsers = users.map(row => {
-          if(row.id === user.id){
-            return user
-          }
-          return row
-        })
-        setUsers(newUsers)
-        setUser({})
-        // console.log(newUsers)
-
-      }}>
-        <input type="text" name='id'
-          value={user?.id || ''}
-          onChange={handlechange}
-        />
-        <input type="text" name='name'
-          value={user?.name || ''}
-          onChange={handlechange}
-
-        />
-        <button>update</button>
-      </form>
     </div>
 
 
